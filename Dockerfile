@@ -3,10 +3,12 @@ FROM eclipse-temurin:21-jdk as build
 WORKDIR /app
 
 # Copy gradle files first for better caching
-COPY gradlew .
+COPY gradlew* ./
 COPY gradle gradle
-COPY build.gradle .
-COPY settings.gradle .
+COPY build.gradle ./
+
+# Create empty settings.gradle if it doesn't exist
+RUN touch settings.gradle
 
 # Make gradlew executable
 RUN chmod +x ./gradlew
