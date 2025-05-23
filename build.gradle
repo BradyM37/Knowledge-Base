@@ -35,6 +35,11 @@ dependencies {
     // Lombok for reducing boilerplate
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Add this to your existing build.gradle file
+tasks.withType(Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
     
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

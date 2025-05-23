@@ -1,30 +1,14 @@
-# Stage 1: Build the application
-FROM eclipse-temurin:21-jdk as build
-WORKDIR /app
-
-# Copy gradle files first for better caching
-COPY gradlew* ./
-COPY gradle gradle
-COPY build.gradle ./
-
-# Create empty settings.gradle if it doesn't exist
-RUN touch settings.gradle
-
-# Make gradlew executable
-RUN chmod +x ./gradlew
-
-# Download dependencies
-RUN ./gradlew dependencies --no-daemon
-
-# Copy source code
-COPY src src
-
-# Build without tests
-RUN ./gradlew assemble --no-daemon -x test
-
-# Stage 2: Create the runtime image
+# Use a single-stage build with JRE only
 FROM eclipse-temurin:21-jre
+
+# Set working directory
 WORKDIR /app
-COPY --from=build /app/build/libs/*.jar app.jar
+
+# Copy only the built JAR file
+COPY build/libs/*.jar app.jar
+
+# Expose port 8080
 EXPOSE 8080
+
+# Run the application
 CMD ["java", "-jar", "app.jar"]
