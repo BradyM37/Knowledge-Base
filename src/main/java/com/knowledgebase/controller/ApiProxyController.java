@@ -12,35 +12,19 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class ApiProxyController {
-
-    @Autowired
-    private RenderApiProxyService renderApiProxy;
     
-    // Handle GET requests
+    @Autowired
+    private RenderApiProxyService apiProxyService;
+    
     @GetMapping("/**")
-    public ResponseEntity<Object> handleGetRequest(
-            @RequestHeader HttpHeaders headers,
-            @RequestParam Map<String, String> queryParams,
-            HttpServletRequest request) {
-        
-        // Extract the path from the request
-        String path = request.getRequestURI().replaceFirst("^/api", "");
-        
-        // Forward to Render API
-        return renderApiProxy.forwardGetRequest(path, queryParams, headers);
+    public ResponseEntity<Object> proxyGetRequest(HttpServletRequest request, @RequestParam Map<String, String> queryParams, @RequestHeader HttpHeaders headers) {
+        String path = request.getRequestURI().substring("/api".length());
+        return apiProxyService.forwardGetRequest(path, queryParams, headers);
     }
     
-    // Handle POST requests
     @PostMapping("/**")
-    public ResponseEntity<Object> handlePostRequest(
-            @RequestBody(required = false) Object body,
-            @RequestHeader HttpHeaders headers,
-            HttpServletRequest request) {
-        
-        // Extract the path from the request
-        String path = request.getRequestURI().replaceFirst("^/api", "");
-        
-        // Forward to Render API
-        return renderApiProxy.forwardPostRequest(path, body, headers);
+    public ResponseEntity<Object> proxyPostRequest(HttpServletRequest request, @RequestBody(required = false) Object body, @RequestHeader HttpHeaders headers) {
+        String path = request.getRequestURI().substring("/api".length());
+        return apiProxyService.forwardPostRequest(path, body, headers);
     }
 }
