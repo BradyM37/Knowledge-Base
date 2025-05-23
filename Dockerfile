@@ -2,7 +2,12 @@ FROM gradle:8.4-jdk21 as build
 WORKDIR /app
 COPY . .
 RUN chmod +x ./gradlew
-RUN ./gradlew build --no-daemon
+# List files to verify content
+RUN ls -la
+# Show Java version
+RUN java -version
+# Run Gradle with debug info
+RUN ./gradlew build --no-daemon --info --stacktrace
 
 FROM openjdk:21-slim
 WORKDIR /app
