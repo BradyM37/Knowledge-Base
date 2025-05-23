@@ -1,7 +1,8 @@
 FROM gradle:8.4-jdk17 as build
 WORKDIR /app
 COPY . .
-RUN gradle build --no-daemon
+RUN chmod +x ./gradlew
+RUN ./gradlew build --no-daemon
 
 FROM openjdk:17-slim
 WORKDIR /app
