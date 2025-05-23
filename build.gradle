@@ -1,49 +1,31 @@
 ﻿plugins {
+    id 'java'
     id 'org.springframework.boot' version '3.2.0'
     id 'io.spring.dependency-management' version '1.1.4'
-    id 'java'
 }
 
 group = 'com.knowledgebase'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '21'
-targetCompatibility = '21'
+
+java {
+    sourceCompatibility = '21'
+}
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    
-    // Database
     implementation 'com.h2database:h2'
-    runtimeOnly 'org.postgresql:postgresql'
-    
-    // JSON processing
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    
-    // Vector embeddings - using a lightweight solution
-    implementation 'org.apache.commons:commons-math3:3.6.1'
-    
-    // NLP tools
-    implementation 'edu.stanford.nlp:stanford-corenlp:4.5.4'
-    implementation 'edu.stanford.nlp:stanford-corenlp:4.5.4:models'
-    
-    // Lombok for reducing boilerplate
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
 
-    // Add this to your existing build.gradle file
 tasks.withType(Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-    
-    // Testing
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 tasks.named('test') {

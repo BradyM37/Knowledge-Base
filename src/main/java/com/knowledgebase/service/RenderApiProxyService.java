@@ -1,4 +1,4 @@
-package com.knowledgebase.service;
+﻿package com.knowledgebase.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,11 @@ public class RenderApiProxyService {
     @Value("${api.key:}")
     private String apiKey;
     
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+    
+    public RenderApiProxyService() {
+        this.restTemplate = new RestTemplate();
+    }
     
     /**
      * Forward a GET request to the Render API
