@@ -1,15 +1,27 @@
-FROM gradle:8.4-jdk21 as build
+# Stage 1: Build the application
+FROM eclipse-temurin:21-jdk as build
 WORKDIR /app
-COPY . .
-RUN chmod +x ./gradlew
-# List files to verify content
-RUN ls -la
-# Show Java version
-RUN java -version
-# Run Gradle with debug info
-RUN ./gradlew build --no-daemon --info --stacktrace
 
-FROM openjdk:21-slim
+# Copy gradle files first for better caching
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle .
+COPY settings.gradle .
+
+# Make gradlew executable
+RUN chmod +x ./gradlew
+
+# Download dependencies
+RUN ./gradlew dependencies --no-daemon
+
+# Copy source code
+COPY src src
+
+# Build without tests
+RUN ./gradlew assemble --no-daemon -x test
+
+# Stage 2: Create the runtime image
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
