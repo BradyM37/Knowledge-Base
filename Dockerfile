@@ -1,4 +1,4 @@
-﻿# Stage 1: Build the application
+# Stage 1: Build the application
 FROM eclipse-temurin:21-jdk as build
 WORKDIR /app
 
@@ -9,10 +9,8 @@ COPY . .
 RUN chmod +x ./gradlew && \
     sed -i 's/\r$//' ./gradlew
 
-# Add duplicate handling strategy to build.gradle if it doesn't already have it
-RUN if ! grep -q "duplicatesStrategy" build.gradle; then \
-    echo "tasks.withType(Jar) { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }" >> build.gradle; \
-    fi
+# Fix potential BOM in build.gradle
+RUN sed -i '1s/^\xEF\xBB\xBF//' build.gradle
 
 # Build without tests
 RUN ./gradlew bootJar --no-daemon -x test --stacktrace
