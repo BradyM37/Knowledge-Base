@@ -2,12 +2,15 @@ package com.knowledgebase.controller;
 
 import com.knowledgebase.model.BuildshipRequest;
 import com.knowledgebase.model.BuildshipResponse;
-import com.knowledgebase.model.QueryResponse;
 import com.knowledgebase.service.FactService;
+import com.knowledgebase.service.RenderApiProxyService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -17,68 +20,50 @@ public class BuildshipIntegrationController {
     @Autowired
     private FactService factService;
     
+    @Autowired
+    private RenderApiProxyService renderApiProxy;
+    
     @PostMapping("/query")
-    public ResponseEntity<BuildshipResponse> handleBuildshipQuery(
+    public ResponseEntity<Object> handleBuildshipQuery(
             @RequestBody BuildshipRequest request,
-            @RequestHeader(value = "X-API-Key", required = false) String apiKey) {
+            @RequestHeader HttpHeaders headers) {
         
-        // You can implement API key validation here if needed
-        
-        // Process the query
-        QueryResponse queryResponse = factService.queryFact(request.getQuestion());
-        
-        // Map to Buildship response format
-        BuildshipResponse response = new BuildshipResponse(
-            queryResponse.getAnswer(),
-            queryResponse.getConfidence(),
-            queryResponse.getSource(),
-            request.getSessionId()
-        );
-        
-        return ResponseEntity.ok(response);
+        // Forward the request to the Render API
+        return renderApiProxy.forwardPostRequest("/api/buildship/query", request, headers);
     }
     
     @PostMapping("/store")
-    public ResponseEntity<BuildshipResponse> storeFact(
+    public ResponseEntity<Object> storeFact(
             @RequestBody BuildshipRequest request,
-            @RequestHeader(value = "X-API-Key", required = false) String apiKey) {
+            @RequestHeader HttpHeaders headers) {
         
-        // Store the fact from the question field
-        factService.storeFact(request.getQuestion());
-        
-        BuildshipResponse response = new BuildshipResponse(
-            "Fact stored successfully",
-            1.0,
-            "Knowledge Base",
-            request.getSessionId()
-        );
-        
-        return ResponseEntity.ok(response);
+        // Forward the request to the Render API
+        return renderApiProxy.forwardPostRequest("/api/buildship/store", request, headers);
     }
     
     @PostMapping("/store-qa")
-    public ResponseEntity<BuildshipResponse> storeQuestionAnswer(
+    public ResponseEntity<Object> storeQuestionAnswer(
             @RequestBody Map<String, String> payload,
-            @RequestHeader(value = "X-API-Key", required = false) String apiKey) {
+            @RequestHeader HttpHeaders headers) {
         
-        String question = payload.get("question");
-        String answer = payload.get("answer");
-        String sessionId = payload.get("sessionId");
+        // Forward the request to the Render API
+        return renderApiProxy.forwardPostRequest("/api/buildship/store-qa", payload, headers);
+    }
+    
+    // Add a fallback endpoint to handle any other requests
+    @RequestMapping("/**")
+    public ResponseEntity<Object> handleAnyRequest(
+            @RequestBody(required = false) Object body,
+            @RequestHeader HttpHeaders headers,
+            @RequestParam Map<String, String> queryParams) {
         
-        if (question == null || answer == null) {
-            return ResponseEntity.badRequest().build();
+        // Get the path from the request
+        String path = "/api/buildship" + headers.getFirst("X-Original-URI");
+        
+        if (body != null) {
+            return renderApiProxy.forwardPostRequest(path, body, headers);
+        } else {
+            return renderApiProxy.forwardGetRequest(path, queryParams, headers);
         }
-        
-        // Store the question and answer
-        factService.storeQuestionAnswer(question, answer);
-        
-        BuildshipResponse response = new BuildshipResponse(
-            "Question and answer stored successfully",
-            1.0,
-            "Knowledge Base",
-            sessionId
-        );
-        
-        return ResponseEntity.ok(response);
     }
 }
