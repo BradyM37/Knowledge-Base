@@ -60,70 +60,94 @@ public class BibleService {
         }
     }
 
-    private void indexBibleContent() {
-        // Extract books, chapters, and verses
-        Pattern bookPattern = Pattern.compile("(Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|1 Samuel|2 Samuel|1 Kings|2 Kings|1 Chronicles|2 Chronicles|Ezra|Nehemiah|Esther|Job|Psalms|Proverbs|Ecclesiastes|Song of Solomon|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|1 Corinthians|2 Corinthians|Galatians|Ephesians|Philippians|Colossians|1 Thessalonians|2 Thessalonians|1 Timothy|2 Timothy|Titus|Philemon|Hebrews|James|1 Peter|2 Peter|1 John|2 John|3 John|Jude|Revelation)\\s+Chapter\\s+(\\d+)");
+private void indexBibleContent() {
+    // First, let's print a sample of the text to see its format
+    System.out.println("Sample Bible text (first 1000 chars): " + fullBibleText.substring(0, Math.min(1000, fullBibleText.length())));
+    
+    // Try a more flexible pattern for book and chapter detection
+    Pattern bookPattern = Pattern.compile("(Genesis|Exodus|Leviticus|Numbers|Deuteronomy|Joshua|Judges|Ruth|1\\s*Samuel|2\\s*Samuel|1\\s*Kings|2\\s*Kings|1\\s*Chronicles|2\\s*Chronicles|Ezra|Nehemiah|Esther|Job|Psalms?|Proverbs|Ecclesiastes|Song\\s*of\\s*Solomon|Isaiah|Jeremiah|Lamentations|Ezekiel|Daniel|Hosea|Joel|Amos|Obadiah|Jonah|Micah|Nahum|Habakkuk|Zephaniah|Haggai|Zechariah|Malachi|Matthew|Mark|Luke|John|Acts|Romans|1\\s*Corinthians|2\\s*Corinthians|Galatians|Ephesians|Philippians|Colossians|1\\s*Thessalonians|2\\s*Thessalonians|1\\s*Timothy|2\\s*Timothy|Titus|Philemon|Hebrews|James|1\\s*Peter|2\\s*Peter|1\\s*John|2\\s*John|3\\s*John|Jude|Revelation)\\s*(?:Chapter\\s*)?(\\d+)", Pattern.CASE_INSENSITIVE);
+    
+    Matcher bookMatcher = bookPattern.matcher(fullBibleText);
+    
+    int matchCount = 0;
+    while (bookMatcher.find()) {
+        matchCount++;
+        String book = bookMatcher.group(1);
+        String chapter = bookMatcher.group(2);
         
-        Matcher bookMatcher = bookPattern.matcher(fullBibleText);
-        
-        while (bookMatcher.find()) {
-            String book = bookMatcher.group(1);
-            String chapter = bookMatcher.group(2);
-            String bookChapter = book + " " + chapter;
-            
-            // Find the start of this chapter
-            int chapterStart = bookMatcher.end();
-            
-            // Find the end of this chapter (start of next chapter or end of text)
-            int chapterEnd = fullBibleText.length();
-            bookMatcher.find();
-            if (bookMatcher.find()) {
-                chapterEnd = bookMatcher.start();
-                // Reset the matcher to continue from where we were
-                bookMatcher = bookPattern.matcher(fullBibleText);
-                bookMatcher.region(chapterStart, fullBibleText.length());
-            }
-            
-            // Extract the chapter text
-            String chapterText = fullBibleText.substring(chapterStart, chapterEnd).trim();
-            bibleChapters.put(bookChapter, chapterText);
-            
-            // Store each chapter as a fact
-            factService.storeFact(book + " Chapter " + chapter + ": " + chapterText);
-            
-            // Extract verses
-            Pattern versePattern = Pattern.compile("(\\d+)\\s+(.+?)(?=\\d+\\s+|$)");
-            Matcher verseMatcher = versePattern.matcher(chapterText);
-            
-            while (verseMatcher.find()) {
-                String verseNum = verseMatcher.group(1);
-                String verseText = verseMatcher.group(2).trim();
-                String verseRef = book + " " + chapter + ":" + verseNum;
-                
-                // Store the verse
-                if (!bibleVerses.containsKey(book)) {
-                    bibleVerses.put(book, new ArrayList<>());
-                }
-                bibleVerses.get(book).add(verseRef + " - " + verseText);
-                
-                // Store each verse as a fact
-                factService.storeFact(verseRef + ": " + verseText);
-                
-                // Store common questions about this verse
-                factService.storeQuestionAnswer(
-                    "What does " + verseRef + " say?", 
-                    verseText
-                );
-                
-                factService.storeQuestionAnswer(
-                    "Where in the Bible does it talk about " + extractKeywords(verseText) + "?",
-                    "You can find this in " + verseRef + ": " + verseText
-                );
-            }
+        // Normalize book name
+        book = book.trim();
+        if (book.toLowerCase().equals("psalm")) {
+            book = "Psalms";
         }
         
-        System.out.println("Bible indexed successfully. Books: " + bibleVerses.size() + ", Chapters: " + bibleChapters.size());
+        String bookChapter = book + " " + chapter;
+        
+        // Find the start of this chapter
+        int chapterStart = bookMatcher.end();
+        
+        // Find the end of this chapter (start of next chapter or end of text)
+        int chapterEnd = fullBibleText.length();
+        
+        // Save current position
+        int currentPos = bookMatcher.end();
+        
+        // Look for the next chapter
+        if (bookMatcher.find()) {
+            chapterEnd = bookMatcher.start();
+            // Reset the matcher to continue from where we were
+            bookMatcher = bookPattern.matcher(fullBibleText);
+            bookMatcher.region(currentPos, fullBibleText.length());
+        }
+        
+        // Extract the chapter text
+        String chapterText = fullBibleText.substring(chapterStart, chapterEnd).trim();
+        
+        // Debug output for first few matches
+        if (matchCount <= 3) {
+            System.out.println("Found: " + book + " " + chapter);
+            System.out.println("Chapter text sample: " + chapterText.substring(0, Math.min(100, chapterText.length())));
+        }
+        
+        bibleChapters.put(bookChapter, chapterText);
+        
+        // Store each chapter as a fact
+        factService.storeFact(book + " Chapter " + chapter + ": " + chapterText);
+        
+        // Extract verses - more flexible pattern
+        Pattern versePattern = Pattern.compile("(\\d+)[\\s\\.\\:]\\s*(.+?)(?=\\d+[\\s\\.\\:]|$)", Pattern.DOTALL);
+        Matcher verseMatcher = versePattern.matcher(chapterText);
+        
+        while (verseMatcher.find()) {
+            String verseNum = verseMatcher.group(1);
+            String verseText = verseMatcher.group(2).trim();
+            String verseRef = book + " " + chapter + ":" + verseNum;
+            
+            // Store the verse
+            if (!bibleVerses.containsKey(book)) {
+                bibleVerses.put(book, new ArrayList<>());
+            }
+            bibleVerses.get(book).add(verseRef + " - " + verseText);
+            
+            // Store each verse as a fact
+            factService.storeFact(verseRef + ": " + verseText);
+            
+            // Store common questions about this verse
+            factService.storeQuestionAnswer(
+                "What does " + verseRef + " say?", 
+                verseText
+            );
+            
+            factService.storeQuestionAnswer(
+                "Where in the Bible does it talk about " + extractKeywords(verseText) + "?",
+                "You can find this in " + verseRef + ": " + verseText
+            );
+        }
     }
+    
+    System.out.println("Bible indexed successfully. Books: " + bibleVerses.size() + ", Chapters: " + bibleChapters.size());
+    System.out.println("Total matches found: " + matchCount);
+}
     
     private String extractKeywords(String text) {
         // Simple keyword extraction - remove common words and punctuation
