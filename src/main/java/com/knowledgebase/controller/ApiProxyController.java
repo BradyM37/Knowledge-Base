@@ -17,8 +17,7 @@ public class ApiProxyController {
     @PostMapping("/query")
     public ResponseEntity<Object> handleQuery(@RequestBody QueryRequest request) {
         // Process the query directly
-        String answer = factService.queryFact(request.getQuery());
-        QueryResponse response = new QueryResponse(answer);
+        QueryResponse response = factService.queryFact(request.getQuery());
         return ResponseEntity.ok(response);
     }
 
@@ -36,10 +35,12 @@ public class ApiProxyController {
         String sessionId = request.get("sessionId");
         
         // Process the query
-        String answer = factService.queryFact(question);
+        QueryResponse response = factService.queryFact(question);
         
         return ResponseEntity.ok(java.util.Map.of(
-            "answer", answer,
+            "answer", response.getAnswer(),
+            "confidence", response.getConfidence(),
+            "source", response.getSource(),
             "sessionId", sessionId
         ));
     }
