@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Knowledge Base API Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Knowledge Base API Documentation</h1>
+    
+    <h2>Query Endpoint</h2>
+    <p>Use this endpoint to query facts from the knowledge base.</p>
+    <pre>
+POST /query
+Content-Type: application/json
+
+{
+  "query": "What is the capital of France?"
+}
+    </pre>
+    
+    <h2>Store Endpoint</h2>
+    <p>Use this endpoint to store new facts in the knowledge base.</p>
+    <pre>
+POST /store
+Content-Type: application/json
+
+"The capital of France is Paris."
+    </pre>
+    
+    <h2>Buildship Integration</h2>
+    <p>Endpoints for Buildship integration:</p>
+    <pre>
+POST /buildship/query
+Content-Type: application/json
+
+{
+  "question": "What is the capital of France?",
+  "sessionId": "user123"
+}
+    </pre>
+    
+    <pre>
+POST /buildship/store
+Content-Type: application/json
+
+{
+  "question": "The capital of France is Paris.",
+  "sessionId": "user123"
+}
+    </pre>
+</body>
+</html>
