@@ -1,14 +1,20 @@
 package com.knowledgebase.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class QueryResponse {
     private String answer;
-    private double confidence;
-    private String source;
+
+    public QueryResponse() {
+    }
+
+    public QueryResponse(String answer) {
+        this.answer = answer;
+    }
+
+    public String getAnswer() {
+        return answer;
+    }
+
+    public void setAnswer(String answer) {
+        this.answer = answer;
+    }
 }
