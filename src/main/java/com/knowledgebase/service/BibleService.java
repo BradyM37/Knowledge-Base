@@ -24,6 +24,7 @@ public class BibleService {
 
     private Map<String, List<String>> bibleVerses = new HashMap<>();
     private Map<String, String> bibleChapters = new HashMap<>();
+    private Map<String, String> bibleVersesByReference = new HashMap<>(); // Add this line
     private String fullBibleText = "";
     
     // Map for common misspellings and variations of book names
@@ -31,7 +32,6 @@ public class BibleService {
     
     @Autowired
     private FactService factService;
-
     @PostConstruct
     public void init() {
         try {
@@ -421,7 +421,10 @@ public class BibleService {
             
             // Store chapter summary instead of full text (to avoid exceeding VARCHAR limit)
             String chapterSummary = book + " Chapter " + chapter + " summary";
-            factService.storeFact(chapterSummary);
+            // Limit to 900 characters to be safe
+            if (chapterSummary.length() <= 900) {
+                factService.storeFact(chapterSummary);
+            }
             
             // Extract verses - more flexible pattern based on the PDF format
             // Looking for patterns like "1 The words..." or "1 In the beginning..."
@@ -445,6 +448,12 @@ public class BibleService {
                 }
                 bibleVerses.get(book).add(verseRef + " - " + verseText);
                 
+                // Also store by specific reference for faster lookup
+                String verseKey = book + " " + chapter + ":" + verseNum;
+                if (!bibleVersesByReference.containsKey(verseKey)) {
+                    bibleVersesByReference.put(verseKey, verseText);
+                }
+                
                 // Store each verse as a fact (with length check)
                 String factContent = verseRef + ": " + verseText;
                 if (factContent.length() <= 900) {
@@ -457,25 +466,29 @@ public class BibleService {
                     factService.storeQuestionAnswer(question1, verseText);
                 }
                 
+                // Be more selective with keywords to avoid long questions
                 String keywords = extractKeywords(verseText);
                 // Limit keywords to ensure we don't exceed length
-                if (keywords.length() > 100) {
-                    keywords = keywords.substring(0, 100);
+                if (keywords.length() > 50) {
+                    keywords = keywords.substring(0, 50);
                 }
                 
-                String question2 = "Where in the Bible does it talk about " + keywords + "?";
-                String answer2 = "You can find this in " + verseRef + ": " + verseText;
-                
-                if (question2.length() <= 900 && answer2.length() <= 900) {
-                    factService.storeQuestionAnswer(question2, answer2);
+                // Only create keyword questions for important verses to reduce database load
+                if (verseNum.equals("1") || Integer.parseInt(verseNum) % 10 == 0) {
+                    String question2 = "Where in the Bible does it talk about " + keywords + "?";
+                    String answer2 = "You can find this in " + verseRef + ": " + verseText;
+                    
+                    if (question2.length() <= 900 && answer2.length() <= 900) {
+                        factService.storeQuestionAnswer(question2, answer2);
+                    }
                 }
             }
         }
         
         System.out.println("Bible indexed successfully. Books: " + bibleVerses.size() + ", Chapters: " + bibleChapters.size());
         System.out.println("Total matches found: " + matchCount);
+        System.out.println("Total verses by reference: " + bibleVersesByReference.size());
     }
-    
     private String extractKeywords(String text) {
         // Simple keyword extraction - remove common words and punctuation
         return text.replaceAll("\\b(the|and|of|to|in|that|is|was|for|on|with|as|by|at|from)\\b", "")
@@ -508,26 +521,32 @@ public class BibleService {
             
             if (normalizedBookName != null) {
                 // We found a valid book name
-                String chapterKey = normalizedBookName + " " + chapter;
-                
-                if (bibleChapters.containsKey(chapterKey)) {
-                    if (verse != null) {
-                        // Looking for a specific verse
-                        if (bibleVerses.containsKey(normalizedBookName)) {
-                            String verseRef = normalizedBookName + " " + chapter + ":" + verse;
-                            for (String verseText : bibleVerses.get(normalizedBookName)) {
-                                if (verseText.startsWith(verseRef)) {
-                                    return verseText;
-                                }
+                if (verse != null) {
+                    // Looking for a specific verse
+                    String verseRef = normalizedBookName + " " + chapter + ":" + verse;
+                    
+                    // First try direct lookup from our reference map
+                    if (bibleVersesByReference.containsKey(verseRef)) {
+                        return verseRef + " - " + bibleVersesByReference.get(verseRef);
+                    }
+                    
+                    // If not found in map, try searching through the book's verses
+                    if (bibleVerses.containsKey(normalizedBookName)) {
+                        for (String verseText : bibleVerses.get(normalizedBookName)) {
+                            if (verseText.startsWith(verseRef)) {
+                                return verseText;
                             }
-                            return "Verse " + verseRef + " not found.";
                         }
-                    } else {
-                        // Return the whole chapter
-                        return "Chapter " + chapterKey + ":\n" + bibleChapters.get(chapterKey);
+                        return "Verse " + verseRef + " not found.";
                     }
                 } else {
-                    return "Chapter " + chapterKey + " not found.";
+                    // Return the whole chapter
+                    String chapterKey = normalizedBookName + " " + chapter;
+                    if (bibleChapters.containsKey(chapterKey)) {
+                        return "Chapter " + chapterKey + ":\n" + bibleChapters.get(chapterKey);
+                    } else {
+                        return "Chapter " + chapterKey + " not found.";
+                    }
                 }
             }
         }
