@@ -34,13 +34,11 @@ public class ApiProxyController {
         String question = request.get("question");
         String sessionId = request.get("sessionId");
         
-        // Process the query
-        QueryResponse response = factService.queryFact(question);
+        // Process the query and get just the answer string
+        String answer = factService.queryFactString(question);
         
         return ResponseEntity.ok(java.util.Map.of(
-            "answer", response.getAnswer(),
-            "confidence", response.getConfidence(),
-            "source", response.getSource(),
+            "answer", answer,
             "sessionId", sessionId
         ));
     }
