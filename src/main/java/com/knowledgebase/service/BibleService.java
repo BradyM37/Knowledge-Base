@@ -557,7 +557,7 @@ public class BibleService {
             if (query.toLowerCase().contains(bookName.toLowerCase())) {
                 // Return a sample of verses from this book
                 List<String> verses = bibleVerses.get(bookName);
-                int sampleSize = Math.min(3, verses.size());
+                intup sampleSize = Math.min(3, verses.size());
                 StringBuilder result = new StringBuilder("Found in " + bookName + ":\n");
                 
                 for (int i = 0; i < sampleSize; i++) {
