@@ -72,12 +72,13 @@ public class ApiProxyController {
         // Check if this is a Bible-related query
         if (isBibleQuery(question)) {
             String bibleAnswer = bibleService.findBiblePassage(question);
-            return ResponseEntity.ok(new QueryResponse(bibleAnswer, sessionId));
+            // Create QueryResponse with the correct constructor
+            return ResponseEntity.ok(new QueryResponse(bibleAnswer, 1.0, sessionId));
         }
         
         // Otherwise, use the fact service
-        String answer = factService.queryFact(question); // Changed from queryFactString to queryFact
+        QueryResponse response = factService.queryFact(question);
         
-        return ResponseEntity.ok(new QueryResponse(answer, sessionId));
+        return ResponseEntity.ok(response);
     }
 }
