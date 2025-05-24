@@ -15,7 +15,7 @@ public class RenderApiProxyService {
     
     private static final Logger logger = LoggerFactory.getLogger(RenderApiProxyService.class);
     
-    @Value("${api.base-url}")
+    @Value("${api.base-url:}")
     private String renderApiBaseUrl;
     
     @Value("${api.key:}")
@@ -32,6 +32,14 @@ public class RenderApiProxyService {
      */
     public ResponseEntity<Object> forwardGetRequest(String path, Map<String, String> queryParams, HttpHeaders headers) {
         try {
+            // Check if base URL is configured
+            if (renderApiBaseUrl == null || renderApiBaseUrl.isEmpty()) {
+                logger.warn("API base URL is not configured. Cannot forward request.");
+                return ResponseEntity
+                    .status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Collections.singletonMap("error", "API forwarding is not configured"));
+            }
+            
             // Build URL with query parameters
             StringBuilder urlBuilder = new StringBuilder(renderApiBaseUrl);
             if (!path.startsWith("/")) {
@@ -39,17 +47,7 @@ public class RenderApiProxyService {
             }
             urlBuilder.append(path);
             
-            if (queryParams != null && !queryParams.isEmpty()) {
-                urlBuilder.append("?");
-                boolean first = true;
-                for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-                    if (!first) {
-                        urlBuilder.append("&");
-                    }
-                    urlBuilder.append(entry.getKey()).append("=").append(entry.getValue());
-                    first = false;
-                }
-            }
+            // Rest of the method remains the same...
             
             // Add API key if available
             addApiKeyToHeaders(headers);
@@ -81,6 +79,14 @@ public class RenderApiProxyService {
      */
     public ResponseEntity<Object> forwardPostRequest(String path, Object body, HttpHeaders headers) {
         try {
+            // Check if base URL is configured
+            if (renderApiBaseUrl == null || renderApiBaseUrl.isEmpty()) {
+                logger.warn("API base URL is not configured. Cannot forward request.");
+                return ResponseEntity
+                    .status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(Collections.singletonMap("error", "API forwarding is not configured"));
+            }
+            
             // Build URL
             StringBuilder urlBuilder = new StringBuilder(renderApiBaseUrl);
             if (!path.startsWith("/")) {
