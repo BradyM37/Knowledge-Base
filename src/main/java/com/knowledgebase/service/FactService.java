@@ -23,22 +23,59 @@ public class FactService {
 
     /**
      * Store a new fact in the database
+     * @return The saved fact
      */
-    public void storeFact(String factContent) {
+    public Fact storeFact(String factContent) {
         if (factContent == null || factContent.trim().isEmpty()) {
-            return;
+            return null;
         }
         
         // Check if fact already exists
         Optional<Fact> existingFact = factRepository.findByContentIgnoreCase(factContent);
         if (existingFact.isPresent()) {
-            // Fact already exists, no need to store it again
-            return;
+            // Fact already exists, return it
+            return existingFact.get();
         }
         
         // Create and save new fact
         Fact fact = new Fact(factContent);
-        factRepository.save(fact);
+        return factRepository.save(fact);
+    }
+    
+    /**
+     * Store a question and its answer as a fact
+     */
+    public Fact storeQuestionAnswer(String question, String answer) {
+        if (question == null || question.trim().isEmpty() || answer == null || answer.trim().isEmpty()) {
+            return null;
+        }
+        
+        // Format as a Q&A fact
+        String factContent = String.format("Q: %s\nA: %s", question, answer);
+        
+        // Store using the existing method
+        return storeFact(factContent);
+    }
+    
+    /**
+     * Get all facts from the database
+     */
+    public List<Fact> getAllFacts() {
+        return factRepository.findAll();
+    }
+    
+    /**
+     * Get a fact by its ID
+     */
+    public Optional<Fact> getFactById(Long id) {
+        return factRepository.findById(id);
+    }
+    
+    /**
+     * Delete a fact by its ID
+     */
+    public void deleteFact(Long id) {
+        factRepository.deleteById(id);
     }
 
     /**
