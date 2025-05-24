@@ -9,8 +9,12 @@ COPY . .
 RUN chmod +x ./gradlew && \
     sed -i 's/\r$//' ./gradlew
 
-# Fix BOM characters in all Java files
-RUN find src -name "*.java" -exec sed -i '1s/^\xEF\xBB\xBF//' {} \;
+# Fix BOM characters in build.gradle and Java files
+RUN sed -i '1s/^\xEF\xBB\xBF//' build.gradle && \
+    find src -name "*.java" -exec sed -i '1s/^\xEF\xBB\xBF//' {} \;
+
+# Display build.gradle content for debugging
+RUN echo "Build.gradle content:" && cat build.gradle
 
 # Create a wrapper properties file if it doesn't exist
 RUN mkdir -p gradle/wrapper && \
